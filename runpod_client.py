@@ -1,9 +1,10 @@
 import base64
+import json
 import logging
-from typing import Optional
+from typing import Optional, Dict
 import asyncio
 import runpod
-from models import RunPodJobResponse, RunPodOutput
+from models import RunPodJobResponse, RunPodOutput, VoiceMap, VoiceInfo
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -22,9 +23,28 @@ class RunPodClient:
         runpod.api_key = self.api_key
         self.endpoint = runpod.Endpoint(self.endpoint_id)
         
+        # Load voice map
+        self.voice_map = self._load_voice_map()
+        
         logger.info(f"Initialized RunPod client for endpoint: {self.endpoint_id}")
+        logger.info(f"Loaded {len(self.voice_map.voices)} voices from voice map")
     
-    async def generate_speech(self, text: str) -> Optional[str]:
+    def _load_voice_map(self) -> VoiceMap:
+        """Load voice map from JSON file"""
+        try:
+            with open('voice_map.json', 'r', encoding='utf-8') as f:
+                voice_data = json.load(f)
+            return VoiceMap(**voice_data)
+        except Exception as e:
+            logger.error(f"Failed to load voice map: {str(e)}")
+            # Return empty voice map as fallback
+            return VoiceMap(voices={})
+    
+    def get_voice_info(self, voice_name: str) -> Optional[VoiceInfo]:
+        """Get voice information for voice cloning"""
+        return self.voice_map.voices.get(voice_name)
+
+    async def generate_speech(self, text: str, voice: Optional[str] = None) -> Optional[str]:
         """
         Generate speech using RunPod Endpoint SDK
         
@@ -36,11 +56,28 @@ class RunPodClient:
         """
         try:
             logger.info(f"Generating speech for text: {text[:100]}...")
+            logger.info(f"Using voice: {voice or 'default'}")
             
             # Prepare the input for RunPod
-            runpod_input = {
-                "text": text
-            }
+            if voice and voice in self.voice_map.voices:
+                # Use voice cloning
+                voice_info = self.voice_map.voices[voice]
+                runpod_input = {
+                    "input": {
+                        "text": text,
+                        "prompt_text": voice_info.prompt_text,
+                        "prompt_wav_url": voice_info.prompt_wav_url
+                    }
+                }
+                logger.info(f"Using voice cloning for voice: {voice}")
+                logger.info(f"Prompt text: {voice_info.prompt_text[:50]}...")
+                logger.info(f"Prompt WAV URL: {voice_info.prompt_wav_url}")
+            else:
+                # Use regular TTS without voice cloning
+                runpod_input = {
+                    "text": text
+                }
+                logger.info("Using regular TTS without voice cloning")
             
             # Run the job in a thread pool to avoid blocking
             logger.info(f"Running job on endpoint {self.endpoint_id}")

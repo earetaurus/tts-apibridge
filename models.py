@@ -8,6 +8,14 @@ class OpenAISpeechRequest(BaseModel):
     response_format: Optional[str] = Field(default="mp3", description="The format to return audio in")
     speed: Optional[float] = Field(default=1.0, description="The speed of the generated audio")
 
+class VoiceInfo(BaseModel):
+    name: str = Field(..., description="Voice name")
+    prompt_text: str = Field(..., description="The text spoken in the wav file for voice cloning")
+    prompt_wav_url: str = Field(..., description="URL to the wav file for voice cloning")
+
+class VoiceMap(BaseModel):
+    voices: Dict[str, VoiceInfo] = Field(..., description="Mapping of voice names to voice info")
+
 class RunPodOutput(BaseModel):
     audio_base64: str = Field(..., description="Base64 encoded WAV audio")
     language: str = Field(default="en", description="Language code")
