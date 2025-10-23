@@ -1,6 +1,7 @@
 import base64
 import logging
 from typing import Optional
+import asyncio
 import runpod
 from models import RunPodJobResponse, RunPodOutput
 from config import config
@@ -41,52 +42,78 @@ class RunPodClient:
                 "text": text
             }
             
-            # Run the job
+            # Run the job in a thread pool to avoid blocking
             logger.info(f"Running job on endpoint {self.endpoint_id}")
-            job = self.endpoint.run(runpod_input)
+            job = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: self.endpoint.run(runpod_input)
+            )
             
-            # Check initial status
-            status = job.status()
-            logger.info(f"Initial job status: {status}")
+            job_id = job.id if hasattr(job, 'id') else "unknown"
+            logger.info(f"Job submitted with ID: {job_id}")
             
-            # Wait for completion with timeout
-            logger.info("Waiting for job completion...")
-            if status != "COMPLETED":
-                output_data = job.output(timeout=config.REQUEST_TIMEOUT)
-            else:
-                output_data = job.output()
+            # Poll for job completion with better error handling
+            max_attempts = config.REQUEST_TIMEOUT // 5  # Check every 5 seconds
+            attempt = 0
             
-            # Get final job status
-            final_status = job.status()
-            logger.info(f"Job completed. Status: {final_status}")
-            logger.info(f"Job output: {output_data}")
+            while attempt < max_attempts:
+                # Check job status
+                status = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: job.status()
+                )
+                logger.info(f"Job {job_id} status: {status} (attempt {attempt + 1}/{max_attempts})")
+                
+                if status == "COMPLETED":
+                    # Get the output
+                    output_data = await asyncio.get_event_loop().run_in_executor(
+                        None, lambda: job.output()
+                    )
+                    logger.info(f"Job {job_id} completed successfully")
+                    logger.info(f"Job output: {output_data}")
+                    
+                    # Parse the response using our model
+                    job_result = {
+                        "status": status,
+                        "output": output_data,
+                        "id": job_id
+                    }
+                    
+                    runpod_response = RunPodJobResponse(**job_result)
+                    
+                    # Check if we have output with audio
+                    if not runpod_response.output or not runpod_response.output.audio_base64:
+                        logger.error(f"Job {job_id} completed but no audio data in output")
+                        return None
+                    
+                    logger.info(f"Successfully received audio data. Job ID: {job_id}")
+                    if runpod_response.executionTime:
+                        logger.info(f"Execution time: {runpod_response.executionTime}ms")
+                    
+                    return runpod_response.output.audio_base64
+                
+                elif status == "FAILED":
+                    logger.error(f"Job {job_id} failed")
+                    # Try to get error details
+                    try:
+                        error_output = await asyncio.get_event_loop().run_in_executor(
+                            None, lambda: job.output()
+                        )
+                        logger.error(f"Job {job_id} error details: {error_output}")
+                    except Exception as e:
+                        logger.error(f"Could not get error details for job {job_id}: {str(e)}")
+                    return None
+                
+                elif status in ["IN_PROGRESS", "QUEUED", "RUNNING"]:
+                    # Job is still processing, wait and retry
+                    await asyncio.sleep(5)
+                    attempt += 1
+                else:
+                    logger.warning(f"Job {job_id} has unexpected status: {status}")
+                    await asyncio.sleep(5)
+                    attempt += 1
             
-            # Construct the full response object
-            job_result = {
-                "status": final_status,
-                "output": output_data,
-                "id": job.id if hasattr(job, 'id') else "unknown"
-            }
-            
-            # Parse the response using our model
-            runpod_response = RunPodJobResponse(**job_result)
-            
-            # Check if job completed successfully
-            if runpod_response.status != "COMPLETED":
-                logger.error(f"Job did not complete successfully. Status: {runpod_response.status}")
-                if runpod_response.status == "FAILED":
-                    logger.error(f"Job failed. Job ID: {runpod_response.id}")
-                return None
-            
-            # Check if we have output with audio
-            if not runpod_response.output or not runpod_response.output.audio_base64:
-                logger.error("No audio data in job output")
-                return None
-            
-            logger.info(f"Successfully received audio data. Job ID: {runpod_response.id}")
-            logger.info(f"Execution time: {runpod_response.executionTime}ms")
-            
-            return runpod_response.output.audio_base64
+            # Timeout reached
+            logger.error(f"Job {job_id} timed out after {config.REQUEST_TIMEOUT} seconds")
+            return None
                 
         except Exception as e:
             logger.error(f"Error generating speech with RunPod: {str(e)}")
