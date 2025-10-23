@@ -3,17 +3,17 @@
     "alloy": {
       "name": "alloy",
       "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
-      "prompt_wav_url": "https://example.com/alloyvc.wav"
+      "prompt_wav_url": "https://github.com/earetaurus/tts-apibridge/raw/refs/heads/main/voicewavs/alloyvc.wav"
     },
     "sage": {
       "name": "sage",
       "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
-      "prompt_wav_url": "https://example.com/echovc.wav"
+      "prompt_wav_url": "https://github.com/earetaurus/tts-apibridge/raw/refs/heads/main/voicewavs/sagevc.wav"
     },
     "shimmer": {
       "name": "shimmer",
       "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
-      "prompt_wav_url": "https://example.com/shimmervc.wav"
+      "prompt_wav_url": "https://github.com/earetaurus/tts-apibridge/raw/refs/heads/main/voicewavs/shimmervc.wav"
     }
   }
 }
