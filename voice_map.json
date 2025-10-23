@@ -1,0 +1,19 @@
+{
+  "voices": {
+    "alloy": {
+      "name": "alloy",
+      "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
+      "prompt_wav_url": "https://example.com/alloyvc.wav"
+    },
+    "sage": {
+      "name": "sage",
+      "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
+      "prompt_wav_url": "https://example.com/echovc.wav"
+    },
+    "shimmer": {
+      "name": "shimmer",
+      "prompt_text": "The quick brown fox jumps over the lazy dog.Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!",
+      "prompt_wav_url": "https://example.com/shimmervc.wav"
+    }
+  }
+}
