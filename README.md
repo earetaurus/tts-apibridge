@@ -1,5 +1,10 @@
 # TTS API Bridge
 
+this is 70% vibe coded only fair to tell you
+check out
+https://github.com/earetaurus/runpod-voxcpm
+
+
 An OpenAI-compatible Text-to-Speech API bridge that uses RunPod serverless endpoints as the backend.
 
 ## Features
@@ -292,3 +297,6 @@ This will show detailed request/response information and help identify issues.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+if you want to help my runpod Balance  survive the month please use my referal link
+https://runpod.io?ref=akghcny7

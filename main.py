@@ -77,7 +77,7 @@ async def list_voices():
         "total_count": len(voices_info)
     }
 
-@app.post("/v1/speech")
+@app.post("/v1/audio/speech")
 async def create_speech(request: OpenAISpeechRequest):
     """
     OpenAI-compatible Speech API endpoint
