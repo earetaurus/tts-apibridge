@@ -299,4 +299,4 @@ This will show detailed request/response information and help identify issues.
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 if you want to help my runpod Balance  survive the month please use my referal link
-https://runpod.io?ref=akghcny7
+https://runpod.io/?ref=akghcny7
